@@ -1,27 +1,27 @@
-package com.serenegiant.usb;
 /*
- * UVCCamera
- * library and sample to access to UVC web camera on non-rooted Android device
+ *  UVCCamera
+ *  library and sample to access to UVC web camera on non-rooted Android device
  *
- * Copyright (c) 2014-2016 saki t_saki@serenegiant.com
+ * Copyright (c) 2014-2017 saki t_saki@serenegiant.com
  *
- * File name: UVCCamera.java
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- * All files in the folder are under this Apache License, Version 2.0.
- * Files in the jni/libjpeg, jni/libusb, jin/libuvc, jni/rapidjson folder may have a different license, see the respective files.
-*/
+ *  All files in the folder are under this Apache License, Version 2.0.
+ *  Files in the libjpeg-turbo, libusb, libuvc, rapidjson folder
+ *  may have a different license, see the respective files.
+ */
+
+package com.serenegiant.usb;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -347,12 +347,15 @@ public class UVCCamera {
 			final int format_nums = formats.length();
 			for (int i = 0; i < format_nums; i++) {
 				final JSONObject format = formats.getJSONObject(i);
-				final int format_type = format.getInt("type");
-				if ((format_type == type) || (type == -1)) {
-					addSize(format, format_type, 0, result);
+				if(format.has("type") && format.has("size")) {
+					final int format_type = format.getInt("type");
+					if ((format_type == type) || (type == -1)) {
+						addSize(format, format_type, 0, result);
+					}
 				}
 			}
 		} catch (final JSONException e) {
+			e.printStackTrace();
 		}
 		return result;
 	}

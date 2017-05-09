@@ -1,27 +1,27 @@
-package com.serenegiant.usbcameracommon;
 /*
- * UVCCamera
- * library and sample to access to UVC web camera on non-rooted Android device
+ *  UVCCamera
+ *  library and sample to access to UVC web camera on non-rooted Android device
  *
- * Copyright (c) 2014-2016 saki t_saki@serenegiant.com
+ * Copyright (c) 2014-2017 saki t_saki@serenegiant.com
  *
- * File name: AbstractUVCCameraHandler.java
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- * All files in the folder are under this Apache License, Version 2.0.
- * Files in the jni/libjpeg, jni/libusb, jin/libuvc, jni/rapidjson folder may have a different license, see the respective files.
-*/
+ *  All files in the folder are under this Apache License, Version 2.0.
+ *  Files in the libjpeg-turbo, libusb, libuvc, rapidjson folder
+ *  may have a different license, see the respective files.
+ */
+
+package com.serenegiant.usbcameracommon;
 
 import android.app.Activity;
 import android.content.Context;
@@ -239,6 +239,58 @@ abstract class AbstractUVCCameraHandler extends Handler {
 		sendMessage(obtainMessage(MSG_MEDIA_UPDATE, path));
 	}
 
+	public boolean checkSupportFlag(final long flag) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		return thread != null && thread.mUVCCamera != null && thread.mUVCCamera.checkSupportFlag(flag);
+	}
+
+	public int getValue(final int flag) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
+				return camera.getBrightness();
+			} else if (flag == UVCCamera.PU_CONTRAST) {
+				return camera.getContrast();
+			}
+		}
+		throw new IllegalStateException();
+	}
+
+	public int setValue(final int flag, final int value) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
+				camera.setBrightness(value);
+				return camera.getBrightness();
+			} else if (flag == UVCCamera.PU_CONTRAST) {
+				camera.setContrast(value);
+				return camera.getContrast();
+			}
+		}
+		throw new IllegalStateException();
+	}
+
+	public int resetValue(final int flag) {
+		checkReleased();
+		final CameraThread thread = mWeakThread.get();
+		final UVCCamera camera = thread != null ? thread.mUVCCamera : null;
+		if (camera != null) {
+			if (flag == UVCCamera.PU_BRIGHTNESS) {
+				camera.resetBrightness();
+				return camera.getBrightness();
+			} else if (flag == UVCCamera.PU_CONTRAST) {
+				camera.resetContrast();
+				return camera.getContrast();
+			}
+		}
+		throw new IllegalStateException();
+	}
+
 	@Override
 	public void handleMessage(final Message msg) {
 		final CameraThread thread = mWeakThread.get();
@@ -275,7 +327,6 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			throw new RuntimeException("unsupported message:what=" + msg.what);
 		}
 	}
-
 
 	static final class CameraThread extends Thread {
 		private static final String TAG_THREAD = "CameraThread";
@@ -420,11 +471,11 @@ abstract class AbstractUVCCameraHandler extends Handler {
 			if (DEBUG) Log.v(TAG_THREAD, "handleStartPreview:");
 			if ((mUVCCamera == null) || mIsPreviewing) return;
 			try {
-				mUVCCamera.setPreviewSize(mWidth, mHeight, mPreviewMode, mBandwidthFactor);
+				mUVCCamera.setPreviewSize(mWidth, mHeight, 1, 31, mPreviewMode, mBandwidthFactor);
 			} catch (final IllegalArgumentException e) {
 				try {
 					// fallback to YUV mode
-					mUVCCamera.setPreviewSize(mWidth, mHeight, UVCCamera.DEFAULT_PREVIEW_MODE, mBandwidthFactor);
+					mUVCCamera.setPreviewSize(mWidth, mHeight, 1, 31, UVCCamera.DEFAULT_PREVIEW_MODE, mBandwidthFactor);
 				} catch (final IllegalArgumentException e1) {
 					callOnError(e1);
 					return;
@@ -438,6 +489,7 @@ abstract class AbstractUVCCameraHandler extends Handler {
 				mUVCCamera.setPreviewTexture((SurfaceTexture)surface);
 			}
 			mUVCCamera.startPreview();
+			mUVCCamera.updateCameraParams();
 			synchronized (mSync) {
 				mIsPreviewing = true;
 			}
